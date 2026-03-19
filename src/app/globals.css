@@ -1,0 +1,227 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design tokens (mirrors ref-code CSS variables) ─────────────────────── */
+:root {
+  --bg-body:           #23292e;
+  --bg-surface:        #2d353b;
+  --bg-card:           #323b42;
+  --bg-input:          #1e2529;
+  --bg-hover:          #3a444c;
+  --bg-table-header:   #126e51;
+
+  --btn-primary:       #03b37f;
+  --btn-primary-hover: #028f66;
+
+  --tx-primary:        #e0e6ea;
+  --tx-secondary:      #9aa5b1;
+  --tx-muted:          #6b7a87;
+
+  --border:            #3a444c;
+  --border-light:      #2a3340;
+
+  --back-color:        #f994ba;
+  --back-dark:         #d4709a;
+  --back-bg:           #fce4ef;
+  --lay-color:         #72bbef;
+  --lay-dark:          #4d9fd6;
+  --lay-bg:            #d4eaf7;
+
+  --sidebar-width:     220px;
+  --header-height:     56px;
+  --radius:            6px;
+}
+
+/* ─── Base reset ──────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Noto Sans', sans-serif;
+  background: var(--bg-body);
+  color: var(--tx-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a { color: var(--btn-primary); text-decoration: none; }
+a:hover { color: var(--btn-primary-hover); }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-body); }
+::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
+
+/* ─── Utility classes ────────────────────────────────────────────────────── */
+@layer components {
+  /* Cards */
+  .card {
+    @apply rounded bg-bg-surface border border-[#3a444c];
+  }
+  .card-header {
+    @apply px-3 py-2 flex items-center justify-between border-b border-[#3a444c] text-xs font-semibold uppercase tracking-wide text-tx-secondary;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-medium rounded px-4 py-1.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-outline {
+    @apply border border-[#3a444c] bg-bg-card hover:bg-bg-hover text-tx-primary font-medium rounded px-4 py-1.5 text-sm transition-colors;
+  }
+  .btn-danger {
+    @apply bg-loss hover:brightness-90 text-white font-medium rounded px-4 py-1.5 text-sm transition-colors;
+  }
+  .btn-sm {
+    @apply px-3 py-1 text-xs;
+  }
+
+  /* Inputs */
+  .input {
+    @apply bg-bg-input border border-[#3a444c] text-tx-primary rounded px-3 py-1.5 text-sm
+           placeholder:text-tx-muted focus:outline-none focus:border-primary transition-colors w-full;
+  }
+  .select {
+    @apply input appearance-none cursor-pointer;
+  }
+
+  /* Table */
+  .table-wrap {
+    @apply overflow-x-auto rounded border border-[#3a444c];
+  }
+  .data-table {
+    @apply w-full text-xs text-left border-collapse;
+  }
+  .data-table thead tr {
+    background: var(--bg-table-header);
+    @apply text-white;
+  }
+  .data-table thead th {
+    @apply px-3 py-2 font-semibold whitespace-nowrap;
+  }
+  .data-table tbody tr {
+    @apply border-b border-[#2a3340] hover:bg-bg-hover transition-colors;
+  }
+  .data-table tbody td {
+    @apply px-3 py-2 text-tx-primary;
+  }
+  .data-table tbody tr:nth-child(even) {
+    background: rgba(255,255,255,0.02);
+  }
+
+  /* Odds buttons */
+  .odds-btn {
+    @apply flex flex-col items-center justify-center rounded text-[11px] font-bold cursor-pointer
+           transition-all select-none min-w-[48px] px-2 py-1 border-0;
+  }
+  .odds-btn-back {
+    @apply odds-btn bg-back text-bg-body hover:brightness-90 active:scale-95;
+  }
+  .odds-btn-lay {
+    @apply odds-btn bg-lay text-bg-body hover:brightness-90 active:scale-95;
+  }
+  .odds-btn-suspended {
+    @apply odds-btn bg-bg-hover text-tx-muted cursor-not-allowed;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide;
+  }
+  .badge-green  { @apply badge bg-primary/20 text-primary; }
+  .badge-red    { @apply badge bg-loss/20 text-loss; }
+  .badge-yellow { @apply badge bg-void/20 text-void; }
+  .badge-gray   { @apply badge bg-bg-hover text-tx-secondary; }
+  .badge-blue   { @apply badge bg-lay/20 text-lay-dark; }
+
+  /* Sidebar link */
+  .nav-link {
+    @apply flex items-center gap-2 px-3 py-2 rounded text-tx-secondary hover:bg-bg-hover hover:text-tx-primary
+           transition-colors text-xs font-medium cursor-pointer;
+  }
+  .nav-link.active {
+    @apply bg-primary/15 text-primary;
+  }
+
+  /* Section titles */
+  .section-title {
+    @apply text-[10px] font-bold uppercase tracking-widest text-tx-muted px-3 pt-3 pb-1;
+  }
+}
+
+/* ─── Layout shells ──────────────────────────────────────────────────────── */
+.layout-user {
+  display: grid;
+  grid-template-rows: var(--header-height) 1fr;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  min-height: 100vh;
+}
+
+.layout-user.sidebar-collapsed {
+  grid-template-columns: 0 1fr;
+}
+
+.layout-admin {
+  display: grid;
+  grid-template-rows: var(--header-height) 1fr;
+  grid-template-columns: 240px 1fr;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main";
+  min-height: 100vh;
+}
+
+/* ─── Betslip animations ─────────────────────────────────────────────────── */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.betslip-enter { animation: slide-up 0.2s ease; }
+
+/* ─── Odds flash on update ───────────────────────────────────────────────── */
+@keyframes flash-back {
+  0%   { background: #f994ba; }
+  60%  { background: #f994ba; }
+  100% { background: transparent; }
+}
+@keyframes flash-lay {
+  0%   { background: #72bbef; }
+  60%  { background: #72bbef; }
+  100% { background: transparent; }
+}
+.flash-back { animation: flash-back 0.8s ease; }
+.flash-lay  { animation: flash-lay  0.8s ease; }
+
+/* ─── Fixtures ticker ────────────────────────────────────────────────────── */
+.ticker-wrap {
+  overflow: hidden;
+  background: #1a2025;
+  border-bottom: 1px solid var(--border);
+}
+.ticker-inner {
+  display: flex;
+  gap: 32px;
+  white-space: nowrap;
+  animation: ticker-scroll 40s linear infinite;
+}
+.ticker-inner:hover { animation-play-state: paused; }
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ─── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .layout-user {
+    grid-template-columns: 0 1fr;
+    grid-template-areas:
+      "header header"
+      "main main";
+  }
+}
