@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: backendRes.status })
     }
 
-    const { accessToken, refreshToken, expiresIn, ...userInfo } = data.data
+    // Spring Boot AuthResponse uses `userId`; frontend AuthUser expects `id` — rename here.
+    const { accessToken, refreshToken, expiresIn, userId, ...rest } = data.data
+    const userInfo = { id: userId, ...rest }
 
     const response = NextResponse.json({ success: true, data: userInfo })
 

@@ -10,11 +10,12 @@ import toast from 'react-hot-toast'
 import { connectWebSocket, disconnectWebSocket, subscribeBetUpdates, type BetSettledNotification } from '@/lib/websocket'
 
 export default function UserRouteLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore()
+  const { user, _hasHydrated } = useAuthStore()
   const { setBalance, clearBalance } = useBalanceStore()
   const router = useRouter()
 
   useEffect(() => {
+    if (!_hasHydrated) return
     if (!user) {
       router.replace('/login')
       return
@@ -51,9 +52,9 @@ export default function UserRouteLayout({ children }: { children: React.ReactNod
       disconnectWebSocket()
       clearBalance()
     }
-  }, [user])
+  }, [user, _hasHydrated])
 
-  if (!user) return null
+  if (!_hasHydrated || !user) return null
 
   return (
     <UserLayout>

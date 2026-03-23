@@ -74,7 +74,7 @@ export default function CreateAccountPage() {
     if (!user?.id) return
     adminApi.getUser(user.id)
       .then(u => {
-        const mp = u.commission?.partnershipPct ?? 100
+        const mp = u.commission?.partnershipPct || 100
         setMaxPship(mp)
         setOurPartnership(mp)
         setValue('partnership', String(mp))

@@ -34,7 +34,9 @@ export async function POST(request: NextRequest) {
       return response
     }
 
-    const { accessToken: token, refreshToken: newRefresh, expiresIn: expirySeconds, ...userInfo } = data.data
+    // Spring Boot AuthResponse uses `userId`; frontend AuthUser expects `id` — rename here.
+    const { accessToken: token, refreshToken: newRefresh, expiresIn: expirySeconds, userId, ...rest } = data.data
+    const userInfo = { id: userId, ...rest }
 
     const cookieOpts = {
       httpOnly: true,
