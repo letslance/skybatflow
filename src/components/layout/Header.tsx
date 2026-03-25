@@ -26,8 +26,8 @@ export default function Header() {
 
   return (
     <header
-      className="flex items-center justify-between px-4 border-b border-[#3a444c] z-30"
-      style={{ gridArea: 'header', height: 'var(--header-height)', background: '#1a2025' }}
+      className="bg-bg-header flex items-center justify-between px-4 border-b border-[#3a444c] z-30"
+      style={{ gridArea: 'header', height: 'var(--header-height)' }}
     >
       {/* Left: toggle + logo */}
       <div className="flex items-center gap-3">

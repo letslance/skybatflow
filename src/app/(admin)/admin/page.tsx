@@ -2,84 +2,164 @@
 
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Users, TrendingUp, Wallet, Gamepad2, Activity, ArrowUpRight } from 'lucide-react'
-import { adminApi, walletApi, betApi } from '@/lib/api'
-import { formatCurrency } from '@/lib/utils'
-import StatCard from '@/components/ui/StatCard'
-import PageHeader from '@/components/ui/PageHeader'
+import { adminApi, walletApi } from '@/lib/api'
 import { useAuthStore } from '@/lib/store'
 
-// Dynamic import to avoid SSR issues with ApexCharts
 const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
+
+function fmtPts(n: number) {
+  // Indian number format: 1,00,000
+  return n.toLocaleString('en-IN')
+}
 
 export default function AdminDashboard() {
   const { user } = useAuthStore()
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeMarkets: 0,
-    todayBets: 0,
-    todayPnl: 0,
-  })
+  const [balance, setBalance] = useState<any>(null)
 
-  // Placeholder chart data — in production connect to real report APIs
-  const chartOptions = {
-    chart: { type: 'area' as const, background: 'transparent', toolbar: { show: false } },
-    theme: { mode: 'dark' as const },
-    colors: ['#03b37f'],
-    stroke: { curve: 'smooth' as const, width: 2 },
-    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0 } },
-    xaxis: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], labels: { style: { colors: '#6b7a87' } } },
-    yaxis: { labels: { style: { colors: '#6b7a87' }, formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k` } },
-    grid: { borderColor: '#3a444c', strokeDashArray: 4 },
-    tooltip: { theme: 'dark', y: { formatter: (v: number) => `₹${formatCurrency(v)}` } },
+  useEffect(() => {
+    if (user?.id) {
+      adminApi.getAdminBalance(user.id).then(setBalance).catch(() => {})
+    }
+  }, [user?.id])
+
+  const creditPts     = balance?.main        ?? 0
+  const allPts        = (balance?.main ?? 0) + (balance?.casino ?? 0)
+  const exposure      = balance?.exposure    ?? 0
+  const available     = balance?.available   ?? 0
+  const settlementPts = 0
+  const upperPts      = 0
+  const downPts       = 0
+
+  // ── Stats bar chart (horizontal) ──────────────────────────────────────────
+  const barOptions: ApexCharts.ApexOptions = {
+    chart: { type: 'bar', background: '#fff', toolbar: { show: false }, fontFamily: 'inherit' },
+    plotOptions: { bar: { horizontal: true, barHeight: '55%', borderRadius: 2 } },
+    colors: ['#5b6be8', '#f5a623', '#50a5f1', '#34c38f', '#343a40'],
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: ['Credit pts', 'All pts', 'Settlement pts', 'Upper pts', 'Down pts'],
+      labels: { style: { colors: '#555', fontSize: '11px' } },
+      min: 0, max: Math.max(allPts * 1.1, 100000),
+    },
+    yaxis: { labels: { style: { colors: '#555', fontSize: '12px' } } },
+    grid: { borderColor: '#f0f0f0' },
+    legend: { show: false },
+    tooltip: { y: { formatter: (v: number) => fmtPts(v) } },
   }
 
-  const chartSeries = [{ name: 'Volume', data: [4200, 8100, 5300, 11200, 7800, 15400, 9300] }]
+  const barSeries = [{
+    name: 'Points',
+    data: [creditPts, allPts, settlementPts, upperPts, downPts],
+  }]
+
+  // ── P/L horizontal bar chart ───────────────────────────────────────────────
+  const plOptions: ApexCharts.ApexOptions = {
+    chart: { type: 'bar', background: '#fff', toolbar: { show: false }, fontFamily: 'inherit' },
+    plotOptions: { bar: { horizontal: true, barHeight: '55%', borderRadius: 2 } },
+    colors: ['#5b6be8', '#f5a623', '#34c38f'],
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: ['Sports P/L', 'Casino P/L', 'Total P/L'],
+      labels: { style: { colors: '#555', fontSize: '11px' } },
+    },
+    yaxis: { labels: { style: { colors: '#555', fontSize: '12px' } } },
+    grid: { borderColor: '#f0f0f0' },
+    legend: { show: false },
+    tooltip: { y: { formatter: (v: number) => fmtPts(v) } },
+  }
+
+  const plSeries = [{ name: 'P/L', data: [0, 0, 0] }]
 
   return (
-    <div>
-      <PageHeader title="Dashboard" subtitle={`Welcome back, ${user?.username}`} />
+    <div style={{ maxWidth: '100%' }}>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatCard label="Total Accounts" value="—" icon={<Users size={16} />} />
-        <StatCard label="Open Markets"   value="—" icon={<Activity size={16} />} />
-        <StatCard label="Today's Bets"   value="—" icon={<TrendingUp size={16} />} />
-        <StatCard label="Today's P&L"    value="—" icon={<Wallet size={16} />} valueClassName="text-win" />
+      {/* ── Row 1: 4 stat cards ───────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, marginBottom: 1 }}>
+        <StatCard label="Balance"    value={fmtPts(balance?.main ?? 0)} />
+        <StatCard label="Exposure"   value={fmtPts(exposure)} />
+        <StatCard label="Credit pts" value={fmtPts(creditPts)} />
+        <StatCard label="All pts"    value={fmtPts(allPts)} />
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
-        <div className="card lg:col-span-2">
-          <div className="card-header">Betting Volume (7 days)</div>
-          <div className="p-2">
-            <Chart options={chartOptions} series={chartSeries} type="area" height={200} />
-          </div>
+      {/* ── Row 2: 3 stat cards ───────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, marginBottom: 16 }}>
+        <StatCard label="Settlement pts" value={fmtPts(settlementPts)} />
+        <StatCard label="Upper pts"      value={fmtPts(upperPts)} />
+        <StatCard label="Down pts"       value={fmtPts(downPts)} />
+      </div>
+
+      {/* ── Points bar chart ──────────────────────────────────────────────── */}
+      <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 4, marginBottom: 16, overflow: 'hidden' }}>
+        {/* Chart menu icon */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
+          <span style={{ color: '#aaa', fontSize: 16, cursor: 'pointer' }}>≡</span>
         </div>
 
-        <div className="card">
-          <div className="card-header">Quick Actions</div>
-          <div className="p-3 flex flex-col gap-2">
-            <a href="/admin/accounts/create" className="btn-primary flex items-center gap-2 justify-center">
-              <Users size={13} /> Create Account
-            </a>
-            <a href="/admin/markets" className="btn-outline flex items-center gap-2 justify-center">
-              <Activity size={13} /> Manage Markets
-            </a>
-            <a href="/admin/reports/pnl" className="btn-outline flex items-center gap-2 justify-center">
-              <ArrowUpRight size={13} /> View P&L Report
-            </a>
-          </div>
+        <div style={{ padding: '0 16px 8px' }}>
+          <Chart options={barOptions} series={barSeries} type="bar" height={220} />
+        </div>
+
+        {/* Legend row */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, padding: '4px 16px 8px', flexWrap: 'wrap' }}>
+          {[
+            { color: '#5b6be8', label: 'Credit pts' },
+            { color: '#f5a623', label: 'All pts' },
+            { color: '#50a5f1', label: 'Settlement pts' },
+            { color: '#34c38f', label: 'Upper pts' },
+            { color: '#343a40', label: 'Down pts' },
+          ].map(l => (
+            <span key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#555' }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: l.color, display: 'inline-block' }} />
+              {l.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Summary numbers below chart */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', borderTop: '1px solid #f0f0f0' }}>
+          {[
+            { color: '#5b6be8', label: 'Credit pts',     value: creditPts },
+            { color: '#f5a623', label: 'All pts',         value: allPts },
+            { color: '#50a5f1', label: 'Settlement pts',  value: settlementPts },
+            { color: '#34c38f', label: 'Upper pts',       value: upperPts },
+            { color: '#343a40', label: 'Down pts',        value: downPts },
+          ].map(s => (
+            <div key={s.label} style={{ flex: '1 1 18%', padding: '12px 16px', textAlign: 'center', borderRight: '1px solid #f0f0f0', minWidth: 100 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 5, marginBottom: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, display: 'inline-block' }} />
+                <span style={{ fontSize: 11, color: '#888' }}>{s.label}</span>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#212529' }}>{fmtPts(s.value)}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Recent activity placeholder */}
-      <div className="card">
-        <div className="card-header">Recent Bets</div>
-        <div className="p-6 text-center text-tx-muted text-xs">
-          Connect to /api/bets for real-time data
+      {/* ── P/L bar chart ─────────────────────────────────────────────────── */}
+      <div style={{ background: '#fff', border: '1px solid #e8e8e8', borderRadius: 4, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
+          <span style={{ color: '#aaa', fontSize: 16, cursor: 'pointer' }}>≡</span>
+        </div>
+        <div style={{ padding: '0 16px 16px' }}>
+          <Chart options={plOptions} series={plSeries} type="bar" height={160} />
         </div>
       </div>
+
+    </div>
+  )
+}
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      background: '#fff',
+      padding: '18px 20px',
+      borderRadius: 0,
+      border: '1px solid #e8e8e8',
+    }}>
+      <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: '#212529' }}>{value}</div>
     </div>
   )
 }

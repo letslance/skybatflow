@@ -41,8 +41,7 @@ export default function MarketCard({ market: initialMarket, eventName, defaultOp
     <div className="card mb-2">
       {/* Market header */}
       <div
-        className="flex items-center justify-between px-3 py-2 cursor-pointer select-none"
-        style={{ background: '#126e51' }}
+        className="flex items-center justify-between px-3 py-2 cursor-pointer select-none bg-tableHeader"
         onClick={() => setOpen(v => !v)}
       >
         <div className="flex items-center gap-2">
@@ -60,8 +59,8 @@ export default function MarketCard({ market: initialMarket, eventName, defaultOp
           {/* Column headers */}
           {open && (
             <div className="hidden sm:flex items-center gap-0.5 text-[9px] font-bold text-white/60 uppercase">
-              <div className="w-[132px] text-center" style={{ color: '#f994ba' }}>BACK</div>
-              <div className="w-[132px] text-center" style={{ color: '#72bbef' }}>LAY</div>
+              <div className="w-[132px] text-center text-back">BACK</div>
+              <div className="w-[132px] text-center text-lay">LAY</div>
             </div>
           )}
           {open ? <ChevronUp size={14} className="text-white/60" /> : <ChevronDown size={14} className="text-white/60" />}

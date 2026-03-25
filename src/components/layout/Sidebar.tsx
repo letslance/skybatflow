@@ -117,11 +117,11 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'overflow-y-auto overflow-x-hidden transition-all duration-200 border-r border-[#3a444c]',
+        'bg-bg-input overflow-y-auto overflow-x-hidden transition-all duration-200 border-r border-[#3a444c]',
         'flex flex-col',
         collapsed ? 'w-0' : 'w-[var(--sidebar-width)]'
       )}
-      style={{ gridArea: 'sidebar', background: '#1e2529' }}
+      style={{ gridArea: 'sidebar' }}
     >
       {!collapsed && (
         <>

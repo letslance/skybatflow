@@ -5,6 +5,7 @@ import { X, Trash2 } from 'lucide-react'
 import { useBetSlipStore, useAuthStore, useBalanceStore } from '@/lib/store'
 import { betApi, walletApi } from '@/lib/api'
 import { calcPotentialPayout, calcLiability, formatCurrency, cn } from '@/lib/utils'
+import Checkbox from '@/components/ui/Checkbox'
 import toast from 'react-hot-toast'
 
 const QUICK_STAKES = [100, 500, 1000, 2000, 5000, 10000]
@@ -71,12 +72,10 @@ export default function BetSlip() {
       {/* Backdrop on mobile */}
       <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setOpen(false)} />
 
-      <div className="betslip-enter fixed bottom-0 right-0 w-[320px] md:w-[280px] z-50 rounded-tl-lg overflow-hidden shadow-2xl"
-           style={{ background: '#1a2025', border: '1px solid #3a444c', borderBottom: 0, borderRight: 0 }}>
+      <div className="betslip-enter fixed bottom-0 right-0 w-[320px] md:w-[280px] z-50 rounded-tl-lg overflow-hidden shadow-2xl bg-bg-header border border-[#3a444c] border-b-0 border-r-0">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[#3a444c]"
-             style={{ background: '#126e51' }}>
+        <div className="flex items-center justify-between px-3 py-2 border-b border-[#3a444c] bg-tableHeader">
           <span className="text-xs font-bold text-white uppercase tracking-wide">
             Bet Slip ({entries.length})
           </span>
@@ -98,17 +97,13 @@ export default function BetSlip() {
         </div>
 
         {/* Accept odds change */}
-        <div className="px-3 py-2 border-t border-[#3a444c] flex items-center gap-2">
-          <input
-            type="checkbox"
+        <div className="px-3 py-2 border-t border-[#3a444c]">
+          <Checkbox
             id="accept-odds"
             checked={acceptOddsChange}
-            onChange={e => setAcceptOddsChange(e.target.checked)}
-            className="accent-primary"
+            onChange={setAcceptOddsChange}
+            label="Accept any odds change"
           />
-          <label htmlFor="accept-odds" className="text-[11px] text-tx-secondary cursor-pointer">
-            Accept any odds change
-          </label>
         </div>
 
         {/* Totals */}
@@ -158,10 +153,10 @@ function BetEntry({
     : 0
 
   return (
-    <div
-      className="px-3 py-2 border-b border-[#2a3340]"
-      style={{ background: entry.betType === 'BACK' ? 'rgba(249,148,186,0.06)' : 'rgba(114,187,239,0.06)' }}
-    >
+    <div className={cn(
+      'px-3 py-2 border-b border-[#2a3340]',
+      entry.betType === 'BACK' ? 'bg-back/[0.06]' : 'bg-lay/[0.06]'
+    )}>
       <div className="flex items-start justify-between mb-1.5">
         <div>
           <div className="text-[11px] font-semibold text-tx-primary leading-tight">{entry.runnerName}</div>

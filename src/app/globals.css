@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hind:wght@300;400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,6 +11,7 @@
   --bg-surface:        #2d353b;
   --bg-card:           #323b42;
   --bg-input:          #1e2529;
+  --bg-header:         #1a2025;   /* user header + betslip */
   --bg-hover:          #3a444c;
   --bg-table-header:   #126e51;
 
@@ -30,8 +32,13 @@
   --lay-dark:          #4d9fd6;
   --lay-bg:            #d4eaf7;
 
-  --sidebar-width:     220px;
-  --header-height:     56px;
+  --bg-sidebar:        #16191c;
+  --text-sidebar:      #aaafb5;
+  --text-highlight:    #ffffff;
+  --btn-reset:         #fc4242;
+
+  --sidebar-width:     240px;
+  --header-height:     60px;
   --radius:            6px;
 }
 
@@ -214,6 +221,40 @@ a:hover { color: var(--btn-primary-hover); }
 @keyframes ticker-scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+/* ─── Sidebar icon vertical alignment (Boxicons / MDI) ──────────────────── */
+#sidebar-menu i,
+.sidebar-icon {
+  display: inline-block;
+  min-width: 1.5rem;
+  font-size: 16px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* ─── Scrollbar for sidebar ──────────────────────────────────────────────── */
+.sidebar-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #2a3038 transparent;
+}
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: #2a3038; border-radius: 2px; }
+
+/* ─── Sub-menu collapse animation ────────────────────────────────────────── */
+.sub-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: #11141a;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+}
+.sub-menu.open {
+  max-height: 800px;
 }
 
 /* ─── Mobile ─────────────────────────────────────────────────────────────── */
