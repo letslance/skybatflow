@@ -15,7 +15,7 @@ export default function AdminRouteLayout({ children }: { children: React.ReactNo
     // Without this guard, `user` is always null on the first render after a page refresh,
     // causing a spurious redirect to /login even when the user is authenticated.
     if (!_hasHydrated) return
-    if (!user) { router.replace('/login'); return }
+    if (!user) { router.replace('/admin/login'); return }
     if (!ADMIN_ROLES.includes(user.role)) { router.replace('/'); }
   }, [user, _hasHydrated])
 

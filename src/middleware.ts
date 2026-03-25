@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ADMIN_ROLES } from '@/types'
 
 /** Public paths that never require authentication. */
-const PUBLIC_PATHS = ['/login', '/register', '/api/auth', '/transaction-code']
+const PUBLIC_PATHS = ['/login', '/admin/login', '/register', '/api/auth', '/api/health', '/transaction-code']
 
 /** Admin-only path prefix. */
 const ADMIN_PATH = '/admin'
@@ -32,10 +32,10 @@ export function middleware(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')
   const userRole    = request.cookies.get('user_role')?.value ?? ''
 
-  // Not authenticated — redirect to login
+  // Not authenticated — redirect to appropriate login page
   if (!accessToken) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = pathname.startsWith('/admin') ? '/admin/login' : '/login'
     url.searchParams.set('from', pathname)
     return NextResponse.redirect(url)
   }

@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, Tv2, Flame, Trophy, Gamepad2, Wallet, FileText,
-  ChevronRight, ChevronDown, Star
+  ChevronRight, ChevronDown, Star, LogOut
 } from 'lucide-react'
 import { useState } from 'react'
-import { useSidebarStore } from '@/lib/store'
+import { useSidebarStore, useAuthStore } from '@/lib/store'
+import { authApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -104,6 +105,14 @@ function NavLink({ item, depth = 0 }: { item: NavItem; depth?: number }) {
 
 export default function Sidebar() {
   const { collapsed } = useSidebarStore()
+  const { logout } = useAuthStore()
+  const router = useRouter()
+
+  async function handleLogout() {
+    try { await authApi.logout() } catch { /* ignore */ }
+    logout()
+    router.push('/login')
+  }
 
   return (
     <aside
@@ -115,12 +124,23 @@ export default function Sidebar() {
       style={{ gridArea: 'sidebar', background: '#1e2529' }}
     >
       {!collapsed && (
-        <nav className="p-2 flex flex-col gap-0.5">
-          <div className="section-title">Menu</div>
-          {NAV.map(item => (
-            <NavLink key={item.label} item={item} />
-          ))}
-        </nav>
+        <>
+          <nav className="flex-1 p-2 flex flex-col gap-0.5">
+            <div className="section-title">Menu</div>
+            {NAV.map(item => (
+              <NavLink key={item.label} item={item} />
+            ))}
+          </nav>
+
+          <div className="p-2 border-t border-[#3a444c]">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-loss hover:bg-bg-hover rounded transition-colors"
+            >
+              <LogOut size={14} /> Logout
+            </button>
+          </div>
+        </>
       )}
     </aside>
   )

@@ -132,7 +132,7 @@ export default function AdminSidebar() {
   async function handleLogout() {
     try { await authApi.logout() } catch { /* */ }
     logout()
-    router.push('/login')
+    router.push('/admin/login')
   }
 
   return (
