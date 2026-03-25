@@ -43,7 +43,7 @@ const schema = z.object({
   userType:        z.string().min(1, 'Please select user type'),
   partnership:     z.string().optional(),
   remark:          z.string().optional(),
-  txnCode:         z.string().optional(),
+  txnCode:         z.string().min(6, 'Transaction code is required'),
 }).refine(d => d.password === d.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
@@ -113,7 +113,7 @@ export default function CreateAccountPage() {
         username:            data.username,
         fullName:            data.fullName,
         password:            data.password,
-        transactionPassword: data.txnCode || '',
+        transactionPassword: data.txnCode,
         role:                data.userType,
         mobile:              data.mobile      || undefined,
         city:                data.city        || undefined,
@@ -248,8 +248,9 @@ export default function CreateAccountPage() {
           </div>
 
           <div className={grp}>
-            <label className={lbl}>Transaction Code:</label>
-            <input {...register('txnCode')} type="text" className={field} />
+            <label className={lbl}>Transaction Code: *</label>
+            <input {...register('txnCode')} type="password" className={field} placeholder="Your 6-digit transaction code" />
+            {err.txnCode && <p className="text-xs text-red-600 mt-1">{err.txnCode.message}</p>}
           </div>
 
           <div className="text-right mt-auto">
