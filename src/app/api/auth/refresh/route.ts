@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const cookieOpts = {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict' as const,
       path:     '/',
     }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('access_token',  token,       { ...cookieOpts, maxAge: expirySeconds ?? 3600 })
     response.cookies.set('refresh_token', newRefresh,  { ...cookieOpts, maxAge: 7 * 24 * 3600 })
     response.cookies.set('user_role', userInfo.role ?? '', {
-      httpOnly: false, secure: process.env.NODE_ENV === 'production',
+      httpOnly: false, secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict' as const, path: '/', maxAge: expirySeconds ?? 3600,
     })
 

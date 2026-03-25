@@ -93,7 +93,8 @@ export const apiDelete = <T>(url: string) =>
  */
 export const authApi = {
   login: async (username: string, password: string) => {
-    // Call Next.js BFF route (not Spring Boot directly) — sets httpOnly cookies
+    // Call Next.js BFF route (not Spring Boot directly) — sets httpOnly cookies.
+    // Returns AuthUser on normal login, or { requiresPasswordChange: true } on first login.
     const res = await fetch('/api/auth/login', {
       method:      'POST',
       headers:     { 'Content-Type': 'application/json' },
@@ -102,7 +103,18 @@ export const authApi = {
     })
     const data = await res.json()
     if (!res.ok) throw { response: { data } }
-    return data.data   // AuthUser (no tokens)
+    return data.data as (import('@/types').AuthUser & { requiresPasswordChange?: boolean })
+  },
+  activate: async (currentPassword: string, newPassword: string) => {
+    const res = await fetch('/api/auth/activate', {
+      method:      'POST',
+      headers:     { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body:        JSON.stringify({ currentPassword, newPassword }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw { response: { data } }
+    return data.data as { transactionCode: string; message: string }
   },
   logout: async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })

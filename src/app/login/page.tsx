@@ -31,11 +31,19 @@ export default function LoginPage() {
     setLoading(true)
     try {
       // authApi.login calls the Next.js BFF route which sets httpOnly cookies.
-      // It returns only non-sensitive user info (no tokens).
-      const user = await authApi.login(data.username, data.password)
-      setAuth(user)
+      // Returns { requiresPasswordChange: true } for first-login / after admin password reset,
+      // or the AuthUser object for normal login.
+      const result = await authApi.login(data.username, data.password)
 
-      const isAdmin = !['PLAYER', 'USER'].includes(user.role)
+      if (result.requiresPasswordChange) {
+        // fpc JWT is now in the access_token cookie (15 min window).
+        // Redirect to the forced activation screen.
+        router.push('/activate')
+        return
+      }
+
+      setAuth(result)
+      const isAdmin = !['PLAYER', 'USER'].includes(result.role)
       router.push(isAdmin ? '/admin' : '/')
     } catch (err: any) {
       toast.error(err?.response?.data?.message || err?.response?.data?.error || 'Login failed')

@@ -15,7 +15,7 @@ const BACKEND = process.env.BACKEND_URL || 'http://localhost:7080'
 
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure:   process.env.NODE_ENV === 'production',
+  secure:   process.env.COOKIE_SECURE === 'true',
   sameSite: 'strict' as const,
   path:     '/',
 }
@@ -45,8 +45,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data, { status: backendRes.status })
     }
 
+    const { accessToken, refreshToken, expiresIn, userId, requiresPasswordChange, ...rest } = data.data
+
+    // ── Force-password-change flow ─────────────────────────────────────────
+    // Spring Boot issued a short-lived fpc JWT (15 min). Set it as the access_token
+    // cookie and signal the frontend to redirect to /activate.
+    // No refresh_token or user_role cookies — they are only valid after full activation.
+    if (requiresPasswordChange) {
+      const response = NextResponse.json({
+        success: true,
+        data: { requiresPasswordChange: true },
+      })
+      response.cookies.set('access_token', accessToken, {
+        ...COOKIE_OPTS,
+        maxAge: expiresIn ?? 900,   // 15 minutes
+      })
+      return response
+    }
+
+    // ── Normal login ───────────────────────────────────────────────────────
     // Spring Boot AuthResponse uses `userId`; frontend AuthUser expects `id` — rename here.
-    const { accessToken, refreshToken, expiresIn, userId, ...rest } = data.data
     const userInfo = { id: userId, ...rest }
 
     const response = NextResponse.json({ success: true, data: userInfo })
@@ -63,7 +81,7 @@ export async function POST(request: NextRequest) {
     // Non-httpOnly cookie for role-based middleware routing (not a secret)
     response.cookies.set('user_role', userInfo.role ?? '', {
       httpOnly: false,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict' as const,
       path:     '/',
       maxAge:   expiresIn ?? 3600,

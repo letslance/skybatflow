@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ADMIN_ROLES } from '@/types'
 
 /** Public paths that never require authentication. */
-const PUBLIC_PATHS = ['/login', '/register', '/api/auth']
+const PUBLIC_PATHS = ['/login', '/register', '/api/auth', '/transaction-code']
 
 /** Admin-only path prefix. */
 const ADMIN_PATH = '/admin'
@@ -30,6 +30,7 @@ export function middleware(request: NextRequest) {
   }
 
   const accessToken = request.cookies.get('access_token')
+  const userRole    = request.cookies.get('user_role')?.value ?? ''
 
   // Not authenticated — redirect to login
   if (!accessToken) {
@@ -39,10 +40,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Force-password-change state: access_token cookie exists but no user_role cookie.
+  // This means the user has a fpc JWT (short-lived, issued at first login) and must
+  // complete the /activate flow before accessing anything else.
+  if (!userRole && !pathname.startsWith('/activate')) {
+    return NextResponse.redirect(new URL('/activate', request.url))
+  }
+
   // Admin route — verify role from non-httpOnly routing cookie
   if (pathname.startsWith(ADMIN_PATH)) {
-    const role = request.cookies.get('user_role')?.value ?? ''
-    if (!ADMIN_ROLES.includes(role as import('@/types').UserRole)) {
+    if (!ADMIN_ROLES.includes(userRole as import('@/types').UserRole)) {
       // Authenticated but not an admin — send to home
       return NextResponse.redirect(new URL('/', request.url))
     }
