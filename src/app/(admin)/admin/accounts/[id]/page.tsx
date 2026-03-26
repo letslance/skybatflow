@@ -19,6 +19,7 @@ export default function AccountDetailPage() {
   const [walletBal, setWalletBal] = useState<Balance | null>(null)
   const [loading, setLoading]     = useState(true)
   const [statusModal, setStatusModal] = useState(false)
+  const [lockTxnCode, setLockTxnCode] = useState('')
   const [creditModal, setCreditModal] = useState<'deposit' | 'withdraw' | null>(null)
 
   useEffect(() => { load() }, [id])
@@ -38,14 +39,27 @@ export default function AccountDetailPage() {
 
   async function toggleStatus() {
     if (!user) return
-    const next = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE'
+    if (!/^\d{6}$/.test(lockTxnCode)) { toast.error('Transaction code must be exactly 6 digits'); return }
+    const locking = user.status === 'ACTIVE'
     try {
-      await adminApi.setStatus(user.id, next)
-      toast.success(`Account ${next.toLowerCase()}`)
+      await adminApi.setLocks(
+        user.id,
+        locking,                          // userLock
+        locking || (user.betLock ?? false), // keep betLock when unlocking
+        lockTxnCode
+      )
+      toast.success(`Account ${locking ? 'locked' : 'unlocked'}`)
       setStatusModal(false)
+      setLockTxnCode('')
       load()
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Failed')
+      const msg: string = e?.response?.data?.error || 'Failed'
+      if (msg.includes('logged out for security')) {
+        toast.error(msg)
+        setTimeout(() => { window.location.href = '/admin/login' }, 1500)
+        return
+      }
+      toast.error(msg)
     }
   }
 
@@ -153,7 +167,26 @@ export default function AccountDetailPage() {
           <p className="text-sm text-tx-primary mb-4">
             Are you sure you want to {user.status === 'ACTIVE' ? 'lock' : 'unlock'}{' '}
             <strong>{user.username}</strong>?
+            {user.status === 'ACTIVE' && (
+              <span className="block text-xs text-loss mt-1">
+                This will immediately terminate their active session.
+              </span>
+            )}
           </p>
+          <div className="mb-4">
+            <label className="block text-xs text-tx-secondary mb-1">
+              Your Transaction Code <span className="text-loss">*</span>
+            </label>
+            <input
+              type="password"
+              value={lockTxnCode}
+              onChange={e => setLockTxnCode(e.target.value)}
+              placeholder="6-digit transaction code"
+              maxLength={6}
+              className="input w-full"
+              style={{ background: lockTxnCode ? undefined : '#ffffcc', color: '#212529' }}
+            />
+          </div>
           <div className="flex gap-2">
             <button
               onClick={toggleStatus}
@@ -161,7 +194,7 @@ export default function AccountDetailPage() {
             >
               Confirm
             </button>
-            <button onClick={() => setStatusModal(false)} className="btn-outline flex-1">Cancel</button>
+            <button onClick={() => { setStatusModal(false); setLockTxnCode('') }} className="btn-outline flex-1">Cancel</button>
           </div>
         </Modal>
       )}
