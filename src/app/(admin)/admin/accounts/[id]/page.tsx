@@ -235,23 +235,26 @@ function CreditModal({
 }) {
   const [amount, setAmount] = useState('')
   const [remark, setRemark] = useState('')
+  const [txnCode, setTxnCode] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function submit() {
     const amt = parseFloat(amount)
     if (!amt || amt <= 0) { toast.error('Enter a valid amount'); return }
+    if (!/^\d{6}$/.test(txnCode)) { toast.error('Enter your 6-digit transaction code'); return }
     setSaving(true)
     try {
       if (type === 'deposit') {
-        await adminApi.creditDeposit(user.id, amt, remark)
+        await adminApi.creditDeposit(user.id, amt, txnCode, remark)
         toast.success(`₹${formatCurrency(amt)} deposited to ${user.username}`)
       } else {
-        await adminApi.creditWithdraw(user.id, amt, remark)
+        await adminApi.creditWithdraw(user.id, amt, txnCode, remark)
         toast.success(`₹${formatCurrency(amt)} withdrawn from ${user.username}`)
       }
       onDone()
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Transaction failed')
+      const msg = e?.response?.data?.message || e?.response?.data?.error || 'Transaction failed'
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -287,6 +290,17 @@ function CreditModal({
             onChange={e => setRemark(e.target.value)}
             className="input w-full"
             placeholder="Optional note"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-tx-secondary mb-1">Transaction Code *</label>
+          <input
+            type="password"
+            maxLength={6}
+            value={txnCode}
+            onChange={e => setTxnCode(e.target.value.replace(/\D/g, ''))}
+            className="input w-full"
+            placeholder="6-digit code"
           />
         </div>
         <div className="flex gap-2 pt-1">

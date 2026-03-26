@@ -43,7 +43,7 @@ const schema = z.object({
   userType:        z.string().min(1, 'Please select user type'),
   partnership:     z.string().optional(),
   remark:          z.string().optional(),
-  txnCode:         z.string().min(6, 'Transaction code is required'),
+  txnCode:         z.string().optional(),
 }).refine(d => d.password === d.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
@@ -113,7 +113,7 @@ export default function CreateAccountPage() {
         username:            data.username,
         fullName:            data.fullName,
         password:            data.password,
-        transactionPassword: data.txnCode,
+        transactionPassword: data.txnCode || '',
         role:                data.userType,
         mobile:              data.mobile      || undefined,
         city:                data.city        || undefined,
@@ -135,10 +135,13 @@ export default function CreateAccountPage() {
 
   if (allowedRoles.length === 0) {
     return (
-      <div>
+      <div className="bg-[#f5f6fa] min-h-screen py-4">
+        {/* Page header */}
         <div className="flex justify-between items-center mx-3 mb-3">
-          <h6 className="text-sm font-bold uppercase">CREATE ACCOUNT</h6>
-          <nav className="text-xs text-tx-muted">Home / Users / <span className="font-bold text-tx-primary">Create Account</span></nav>
+          <h6 className="text-[15px] font-bold text-[#495057] uppercase">CREATE ACCOUNT</h6>
+          <nav className="text-xs text-[#6c757d]">
+            Home / Users / <span className="font-bold text-[#495057]">Create Account</span>
+          </nav>
         </div>
         <p className="text-sm mx-3 mt-4">Your role ({user?.role}) cannot create sub-accounts.</p>
       </div>
@@ -146,74 +149,78 @@ export default function CreateAccountPage() {
   }
 
   const err    = errors
-  const field  = 'w-full px-3 py-2 text-sm border border-[#ccc] rounded text-[#495057] focus:border-primary focus:outline-none'
-  const lbl    = 'block font-semibold text-sm mb-[5px]'
-  const grp    = 'mb-[15px]'
+
+  // Updated UI styles
+  const field  = `w-full px-3 py-[7px] text-sm border border-[#d6dbe1] rounded text-[#495057] focus:bg-white focus:border-[#80bdff] outline-none transition-all duration-150 `
+
+  const lbl = 'block text-[13px] font-semibold text-[#495057] mb-[4px]'
+  const grp = 'mb-[12px]'
 
   return (
-    <div>
+    <div className="bg-[#f5f6fa] min-h-screen py-4">
+
       {/* Page header */}
       <div className="flex justify-between items-center mx-3 mb-3">
-        <h6 className="text-sm font-bold uppercase">CREATE ACCOUNT</h6>
-        <nav className="text-xs text-tx-muted">
-          Home / Users / <span className="font-bold text-tx-primary">Create Account</span>
+        <h6 className="text-[15px] font-bold text-[#495057] uppercase">CREATE ACCOUNT</h6>
+        <nav className="text-xs text-[#6c757d]">
+          Home / Users / <span className="font-bold text-[#495057]">Create Account</span>
         </nav>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-row gap-5 flex-wrap mx-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-row gap-4 flex-wrap mx-3">
 
         {/* ── Left Column: General Information ──────────────── */}
-        <div className="flex-1 min-w-[300px] flex flex-col bg-white p-6 rounded-md" style={{ boxShadow: '0 0 5px rgba(0,0,0,0.05)' }}>
-          <h6 className="text-sm font-semibold text-[#495057] mb-3">General Information</h6>
+        <div className="flex-1 min-w-[300px] flex flex-col bg-white p-5 rounded border border-[#e1e5eb]">
+          <h6 className="text-[14px] font-bold text-[#495057] mb-3">General Information</h6>
 
           <div className={grp}>
             <label className={lbl}>User name: *</label>
-            <input {...register('username')} type="text" className={field} />
+            <input {...register('username')} type="text" className={field} placeholder="User name" />
             {err.username && <p className="text-xs text-red-600 mt-1">{err.username.message}</p>}
           </div>
 
           <div className={grp}>
             <label className={lbl}>Full Name: *</label>
-            <input {...register('fullName')} type="text" className={field} />
+            <input {...register('fullName')} type="text" className={field} placeholder="Full Name" />
             {err.fullName && <p className="text-xs text-red-600 mt-1">{err.fullName.message}</p>}
           </div>
 
           <div className={grp}>
             <label className={lbl}>Password: *</label>
-            <input {...register('password')} type="password" className={field} />
+            <input {...register('password')} type="password" className={field} placeholder="Password" />
             {err.password && <p className="text-xs text-red-600 mt-1">{err.password.message}</p>}
           </div>
 
           <div className={grp}>
             <label className={lbl}>Confirm Password: *</label>
-            <input {...register('confirmPassword')} type="password" className={field} />
+            <input {...register('confirmPassword')} type="password" className={field} placeholder="Confirm Password" />
             {err.confirmPassword && <p className="text-xs text-red-600 mt-1">{err.confirmPassword.message}</p>}
           </div>
 
           <div className={grp}>
             <label className={lbl}>City:</label>
-            <input {...register('city')} type="text" className={field} />
+            <input {...register('city')} type="text" className={field} placeholder="City" />
           </div>
 
           <div className={grp}>
             <label className={lbl}>Mobile Number:</label>
-            <input {...register('mobile')} type="text" className={field} />
+            <input {...register('mobile')} type="text" className={field} placeholder="Mobile Number" />
           </div>
         </div>
 
         {/* ── Right Column: Credit, User Type, Partnership ───── */}
-        <div className="flex-1 min-w-[300px] flex flex-col bg-white p-6 rounded-md" style={{ boxShadow: '0 0 5px rgba(0,0,0,0.05)' }}>
+        <div className="flex-1 min-w-[300px] flex flex-col bg-white p-5 rounded border border-[#e1e5eb]">
 
           <div className={grp}>
             <label className={lbl}>Credit Amount:</label>
-            <input {...register('creditAmount')} type="text" className={field} />
+            <input {...register('creditAmount')} type="text" className={field} placeholder="Credit Amount" />
           </div>
 
           <div className={grp}>
             <label className={lbl}>
               User Type: *
               {user?.role && (
-                <span className="text-xs text-tx-muted font-normal ml-1">({user.role})</span>
+                <span className="text-xs text-[#6c757d] font-normal ml-1">({user.role})</span>
               )}
             </label>
             <select {...register('userType')} className={field}>
@@ -225,13 +232,13 @@ export default function CreateAccountPage() {
             {err.userType && <p className="text-xs text-red-600 mt-1">{err.userType.message}</p>}
           </div>
 
-          <h6 className="text-sm font-semibold text-[#495057] mb-3">Partnership Information</h6>
+          <h6 className="text-[14px] font-bold text-[#495057] mb-3">Partnership Information</h6>
 
           {watchedRole !== 'PLAYER' && (
             <div className={grp}>
               <label className={lbl}>Partnership to Give Child: (Max: {maxPship}%)</label>
               <input {...register('partnership')} type="text" className={field} />
-              <p className="text-xs text-[#777] mt-1">
+              <p className="text-xs text-[#6c757d] mt-1">
                 You Keep: {ourPartnership}% | Child Gets: {downLinePartnership}%
               </p>
               {showValidationMsg && (
@@ -244,20 +251,19 @@ export default function CreateAccountPage() {
 
           <div className={grp}>
             <label className={lbl}>Remark:</label>
-            <textarea {...register('remark')} rows={3} className={`${field} resize-y`} />
+            <textarea {...register('remark')} rows={3} className={`${field} resize-y`} placeholder="Remark" />
           </div>
 
           <div className={grp}>
-            <label className={lbl}>Transaction Code: *</label>
-            <input {...register('txnCode')} type="password" className={field} placeholder="Your 6-digit transaction code" />
-            {err.txnCode && <p className="text-xs text-red-600 mt-1">{err.txnCode.message}</p>}
+            <label className={lbl}>Transaction Code:</label>
+            <input {...register('txnCode')} type="text" className={field} placeholder="Transaction Code" />
           </div>
 
           <div className="text-right mt-auto">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#111] text-white px-5 py-2 rounded font-bold cursor-pointer hover:bg-[#222] disabled:opacity-60 text-sm"
+              className="bg-[#343a40] text-white px-5 py-2 rounded font-bold cursor-pointer hover:bg-[#23272b] disabled:opacity-60 text-sm"
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>

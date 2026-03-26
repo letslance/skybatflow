@@ -32,6 +32,7 @@ export default function SportSettingsPage() {
   const [sports,  setSports]  = useState<SportConfig[]>(DEFAULT_SPORTS)
   const [saving,  setSaving]  = useState(false)
   const [loading, setLoading] = useState(true)
+  const [txnCode, setTxnCode] = useState('')
 
   useEffect(() => {
     adminApi.getSportSettings()
@@ -45,12 +46,15 @@ export default function SportSettingsPage() {
   }
 
   async function save() {
+    if (!/^\d{6}$/.test(txnCode)) { toast.error('Enter your 6-digit transaction code'); return }
     setSaving(true)
     try {
-      await adminApi.updateSportSettings(sports)
+      await adminApi.updateSportSettings(sports, txnCode)
       toast.success('Sport settings saved')
-    } catch {
-      toast.error('Failed to save sport settings')
+      setTxnCode('')
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.response?.data?.error || 'Failed to save sport settings'
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -111,7 +115,15 @@ export default function SportSettingsPage() {
         </table>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex items-center gap-3">
+        <input
+          type="password"
+          maxLength={6}
+          value={txnCode}
+          onChange={e => setTxnCode(e.target.value.replace(/\D/g, ''))}
+          className="input w-40"
+          placeholder="Transaction code"
+        />
         <button onClick={save} disabled={saving || loading} className="btn-primary">
           {saving ? 'Saving...' : 'Save Sport Settings'}
         </button>

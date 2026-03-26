@@ -202,12 +202,12 @@ export const adminApi = {
   /** Reset a downline user's password. Requires caller's own 6-digit transaction code. */
   resetClientPassword: (targetUserId: string, newPassword: string, transactionCode: string) =>
     apiPut(`/api/admin/users/${targetUserId}/password`, { newPassword, transactionCode }),
-  /** Credit deposit into a downline user's wallet (admin-level transfer). */
-  creditDeposit: (userId: string, amount: number, remark?: string) =>
-    apiPost(`/api/wallet/admin/credit`, { userId, amount, remark }),
-  /** Withdraw (debit) from a downline user's wallet. */
-  creditWithdraw: (userId: string, amount: number, remark?: string) =>
-    apiPost(`/api/wallet/admin/debit`, { userId, amount, remark }),
+  /** Credit deposit into a downline user's wallet (admin-level transfer). Requires caller's transaction code. */
+  creditDeposit: (userId: string, amount: number, transactionCode: string, remark?: string) =>
+    apiPost(`/api/wallet/admin/credit`, { userId, amount, remark, transactionCode }),
+  /** Withdraw (debit) from a downline user's wallet. Requires caller's transaction code. */
+  creditWithdraw: (userId: string, amount: number, transactionCode: string, remark?: string) =>
+    apiPost(`/api/wallet/admin/debit`, { userId, amount, remark, transactionCode }),
   /** Get live wallet balance for any user (used in Deposit/Withdraw modals). */
   getAdminBalance: (userId: string) =>
     apiGet<{ main: number; casino: number; exposure: number; available: number }>('/api/wallet/admin/balance', { userId }),
@@ -248,12 +248,24 @@ export const adminApi = {
   // ── Settings ─────────────────────────────────────────────────────────────
   getSettings: () =>
     apiGet('/api/admin/settings'),
-  updateSettings: (data: object) =>
-    apiPut('/api/admin/settings', data),
+  /** Save global settings. transactionCode is validated server-side. */
+  updateSettings: (data: object, transactionCode: string) =>
+    apiPut('/api/admin/settings', { ...data, transactionCode }),
   getSportSettings: () =>
     apiGet('/api/admin/settings/sports'),
-  updateSportSettings: (data: object) =>
-    apiPut('/api/admin/settings/sports', data),
+  /** Save sport settings. Sports array is wrapped with transactionCode. */
+  updateSportSettings: (sports: object[], transactionCode: string) =>
+    apiPut('/api/admin/settings/sports', { sports, transactionCode }),
+  /** Upload a branding asset (logo | favicon | welcome_banner). Returns { url }. */
+  uploadBrandingAsset: (assetType: 'logo' | 'favicon' | 'welcome_banner', file: File) => {
+    const form = new FormData()
+    form.append('assetType', assetType)
+    form.append('file', file)
+    return axios.post<{ data: { url: string } }>('/api/admin/tenant/upload', form, {
+      withCredentials: true,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data.data)
+  },
 
   // ── Bonus ─────────────────────────────────────────────────────────────────
   listBonuses: () =>
