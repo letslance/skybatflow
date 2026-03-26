@@ -128,7 +128,7 @@ export default function BetHistoryPage() {
           rowKey={r => r.id}
         />
         <div className="p-3">
-          <Pagination page={page} total={bets.length < 50 ? page * 50 + bets.length : (page + 2) * 50} size={50} onChange={load} />
+          <Pagination page={page} totalPages={bets.length < 50 ? page + 1 : page + 2} onChange={load} />
         </div>
       </div>
     </div>

@@ -118,7 +118,7 @@ export default function UserHistoryPage() {
           rowKey={r => r.id}
         />
         <div className="p-3">
-          <Pagination page={page} total={rows.length} size={PAGE_SIZE} onChange={setPage} />
+          <Pagination page={page} totalPages={Math.ceil(rows.length / PAGE_SIZE)} onChange={setPage} />
         </div>
       </div>
     </div>

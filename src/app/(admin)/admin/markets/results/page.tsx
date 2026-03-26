@@ -59,8 +59,7 @@ export default function MarketResultsPage() {
         <div className="p-3">
           <Pagination
             page={page}
-            total={markets.length < 50 ? page * 50 + markets.length : (page + 2) * 50}
-            size={50}
+            totalPages={markets.length < 50 ? page + 1 : page + 2}
             onChange={setPage}
           />
         </div>

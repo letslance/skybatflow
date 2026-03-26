@@ -67,7 +67,7 @@ export default function StatementPage() {
           emptyMessage="No transactions"
         />
         <div className="p-3">
-          <Pagination page={page} total={txns.length < 20 ? page * 20 + txns.length : (page + 2) * 20} size={20} onChange={load} />
+          <Pagination page={page} totalPages={txns.length < 20 ? page + 1 : page + 2} onChange={load} />
         </div>
       </div>
     </div>

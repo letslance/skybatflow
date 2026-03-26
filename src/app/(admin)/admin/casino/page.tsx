@@ -84,8 +84,7 @@ export default function AdminCasinoPage() {
         <div className="p-3">
           <Pagination
             page={page}
-            total={txns.length < 50 ? page * 50 + txns.length : (page + 2) * 50}
-            size={50}
+            totalPages={txns.length < 50 ? page + 1 : page + 2}
             onChange={setPage}
           />
         </div>

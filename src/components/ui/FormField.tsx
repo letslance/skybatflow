@@ -7,13 +7,15 @@ interface FormLabelProps {
   required?: boolean
   htmlFor?: string
   className?: string
+  style?: React.CSSProperties
 }
 
-export function FormLabel({ children, required, htmlFor, className }: FormLabelProps) {
+export function FormLabel({ children, required, htmlFor, className, style }: FormLabelProps) {
   return (
     <label
       htmlFor={htmlFor}
       className={cn('block text-sm font-medium text-tx-secondary mb-1', className)}
+      style={style}
     >
       {children}
       {required && <span className="text-loss ml-0.5">*</span>}
@@ -51,7 +53,7 @@ export function FormField({
             htmlFor={htmlFor}
             required={required}
             className={cn('mt-1.5 mb-0 shrink-0')}
-            style={{ width: labelWidth, minWidth: 120 } as any}
+            style={{ width: labelWidth, minWidth: 120 }}
           >
             {label}
           </FormLabel>
