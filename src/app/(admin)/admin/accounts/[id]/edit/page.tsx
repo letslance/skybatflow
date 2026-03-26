@@ -25,6 +25,7 @@ export default function EditAccountPage() {
     maxBet:              100000,
     maxMarketExposure:   500000,
   })
+  const [txnCode, setTxnCode] = useState('')
 
   useEffect(() => {
     adminApi.getUser(id)
@@ -45,13 +46,20 @@ export default function EditAccountPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!/^\d{6}$/.test(txnCode)) { toast.error('Transaction code must be exactly 6 digits'); return }
     setSaving(true)
     try {
-      await adminApi.updateUser(id, form)
+      await adminApi.updateUser(id, form, txnCode)
       toast.success('Account updated')
       router.push('/admin/accounts')
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'Failed to update')
+      const msg: string = err?.response?.data?.error || err?.response?.data?.message || 'Failed to update'
+      if (msg.includes('logged out for security')) {
+        toast.error(msg)
+        setTimeout(() => { window.location.href = '/admin/login' }, 1500)
+        return
+      }
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -108,6 +116,26 @@ export default function EditAccountPage() {
             {field('maxBet',            'Max Bet (₹)',         0, 1000000)}
             {field('maxMarketExposure', 'Max Market Exposure', 0, 10000000)}
           </div>
+        </div>
+
+        {/* Transaction code */}
+        <div>
+          <label className="block text-xs text-tx-secondary mb-1">
+            Your Transaction Code <span className="text-loss">*</span>
+          </label>
+          <input
+            type="password"
+            value={txnCode}
+            onChange={e => setTxnCode(e.target.value)}
+            placeholder="Enter your 6-digit transaction code"
+            maxLength={6}
+            required
+            className="input w-full"
+            style={{ background: txnCode ? undefined : '#ffffcc', color: '#212529' }}
+          />
+          <p className="text-xs text-tx-muted mt-1">
+            Enter <strong>your own</strong> transaction code to authorize this update.
+          </p>
         </div>
 
         <div className="flex gap-2 pt-1">
