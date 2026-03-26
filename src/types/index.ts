@@ -157,6 +157,8 @@ export interface UserAccount {
   city?: string
   role: UserRole
   status: AccountStatus
+  betLock: boolean
+  changePwdLock: boolean
   tenantId?: string
   // Financials — fetched separately from wallet-service (GET /api/wallet/admin/balance?userId=)
   creditLimit: number

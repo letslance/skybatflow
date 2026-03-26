@@ -267,21 +267,21 @@ function ChangePasswordTab({ user, onDone }: { user: UserAccount; onDone: () => 
     e.preventDefault()
     if (password !== confirm) { toast.error('Passwords do not match'); return }
     if (password.length < 6)  { toast.error('Password must be at least 6 characters'); return }
-    if (!txnCode)              { toast.error('Transaction code is required'); return }
+    if (!/^\d{6}$/.test(txnCode)) { toast.error('Transaction code must be exactly 6 digits'); return }
     setSaving(true)
     try {
-      await adminApi.updateUser(user.id, { password } as any)
-      toast.success('Password changed successfully')
+      await adminApi.resetClientPassword(user.id, password, txnCode)
+      toast.success('Password reset. User must re-login to activate their account.')
       onDone()
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Failed to change password')
+      toast.error(e?.response?.data?.message || 'Failed to reset password')
     } finally { setSaving(false) }
   }
 
   return (
     <div style={{ background: '#fff', border: '1px solid #dee2e6', borderRadius: 4, padding: 20 }}>
       <form onSubmit={submit}>
-        <TabRow label="Password">
+        <TabRow label="New Password">
           <input type="password" value={password} onChange={e => setPassword(e.target.value)}
             style={{ ...inp, background: password ? '#fff' : '#ffffcc' }} required autoFocus />
         </TabRow>
@@ -289,10 +289,15 @@ function ChangePasswordTab({ user, onDone }: { user: UserAccount; onDone: () => 
           <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)}
             placeholder="Confirm Password" style={inp} required />
         </TabRow>
-        <TabRow label="Transaction Code">
+        <TabRow label="Your Transaction Code">
           <input type="password" value={txnCode} onChange={e => setTxnCode(e.target.value)}
-            placeholder="Transaction Code" style={inp} required />
+            placeholder="Enter your 6-digit transaction code" maxLength={6}
+            style={{ ...inp, background: txnCode ? '#fff' : '#ffffcc' }} required />
         </TabRow>
+        <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 4, fontSize: 12, color: '#795548' }}>
+          Enter <strong>your own</strong> transaction code to authorize this password reset.
+          The user will be required to set a new password on next login.
+        </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
           <SubmitBtn loading={saving} />
         </div>
@@ -302,23 +307,31 @@ function ChangePasswordTab({ user, onDone }: { user: UserAccount; onDone: () => 
 }
 
 // ─── User Lock Tab ────────────────────────────────────────────────────────────
-// Screenshot: Bet lock toggle | User lock toggle | Transaction Code (yellow) | submit
+// userLock  → suspends account; user sees 401 immediately, cannot login.
+// betLock   → account stays ACTIVE but bet placement is blocked.
+// Both require the caller's own 6-digit transaction code (3 wrong attempts = force-logout).
 function LockTab({ user, onDone }: { user: UserAccount; onDone: () => void }) {
-  const [betLock, setBetLock]   = useState(false)
   const [userLock, setUserLock] = useState(user.status === 'SUSPENDED')
-  const [txnCode, setTxnCode]   = useState('')
-  const [saving, setSaving]     = useState(false)
+  const [betLock,  setBetLock]  = useState(user.betLock ?? false)
+  const [txnCode,  setTxnCode]  = useState('')
+  const [saving,   setSaving]   = useState(false)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!txnCode) { toast.error('Transaction code is required'); return }
+    if (!/^\d{6}$/.test(txnCode)) { toast.error('Transaction code must be exactly 6 digits'); return }
     setSaving(true)
     try {
-      await adminApi.setStatus(user.id, userLock ? 'SUSPENDED' : 'ACTIVE')
+      await adminApi.setLocks(user.id, userLock, betLock, txnCode)
       toast.success('Lock settings updated')
       onDone()
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Failed to update')
+      const msg: string = e?.response?.data?.error || 'Failed to update'
+      if (msg.includes('logged out for security')) {
+        toast.error(msg)
+        setTimeout(() => { window.location.href = '/admin/login' }, 1500)
+        return
+      }
+      toast.error(msg)
     } finally { setSaving(false) }
   }
 
@@ -329,12 +342,22 @@ function LockTab({ user, onDone }: { user: UserAccount; onDone: () => void }) {
           <Toggle value={betLock} onChange={setBetLock} />
         </TabRow>
         <TabRow label="User lock">
-          <Toggle value={userLock} onChange={setUserLock} />
+          <Toggle value={userLock} onChange={val => {
+            setUserLock(val)
+            if (val) setBetLock(true)  // suspending implies bet-locked
+          }} />
         </TabRow>
         <TabRow label="Transaction Code">
           <input type="password" value={txnCode} onChange={e => setTxnCode(e.target.value)}
+            placeholder="Enter your 6-digit transaction code" maxLength={6}
             style={{ ...inp, background: txnCode ? '#fff' : '#ffffcc' }} required />
         </TabRow>
+        <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 4, fontSize: 12, color: '#795548' }}>
+          Enter <strong>your own</strong> transaction code to authorize this change.
+          {userLock && <span style={{ color: '#c62828', display: 'block', marginTop: 4 }}>
+            ⚠ User lock will immediately terminate the user&apos;s active session.
+          </span>}
+        </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
           <SubmitBtn loading={saving} />
         </div>
@@ -392,24 +415,30 @@ function HistoryTab({ user }: { user: UserAccount }) {
 }
 
 // ─── Edit Profile Tab ─────────────────────────────────────────────────────────
-// Screenshot: Full Name input | Change Password Lock toggle | Favorite Master toggle | Transaction Code | submit
+// changePwdLock=true → user cannot change their own password via self-service.
+// Requires caller's 6-digit transaction code (3 wrong = force-logout).
 function EditProfileTab({ user, onDone }: { user: UserAccount; onDone: () => void }) {
-  const [fullName, setFullName]           = useState(user.fullName || '')
-  const [changePwdLock, setChangePwdLock] = useState(false)
-  const [favMaster, setFavMaster]         = useState(false)
-  const [txnCode, setTxnCode]             = useState('')
-  const [saving, setSaving]               = useState(false)
+  const [fullName,      setFullName]      = useState(user.fullName || '')
+  const [changePwdLock, setChangePwdLock] = useState(user.changePwdLock ?? false)
+  const [txnCode,       setTxnCode]       = useState('')
+  const [saving,        setSaving]        = useState(false)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!txnCode) { toast.error('Transaction code is required'); return }
+    if (!/^\d{6}$/.test(txnCode)) { toast.error('Transaction code must be exactly 6 digits'); return }
     setSaving(true)
     try {
-      await adminApi.updateUser(user.id, { fullName } as any)
+      await adminApi.updateUser(user.id, { fullName, changePwdLock }, txnCode)
       toast.success('Profile updated successfully')
       onDone()
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || 'Failed to update profile')
+      const msg: string = e?.response?.data?.error || e?.response?.data?.message || 'Failed to update profile'
+      if (msg.includes('logged out for security')) {
+        toast.error(msg)
+        setTimeout(() => { window.location.href = '/admin/login' }, 1500)
+        return
+      }
+      toast.error(msg)
     } finally { setSaving(false) }
   }
 
@@ -423,13 +452,14 @@ function EditProfileTab({ user, onDone }: { user: UserAccount; onDone: () => voi
         <TabRow label="Change Password Lock">
           <Toggle value={changePwdLock} onChange={setChangePwdLock} />
         </TabRow>
-        <TabRow label="Favorite Master">
-          <Toggle value={favMaster} onChange={setFavMaster} />
-        </TabRow>
         <TabRow label="Transaction Code">
           <input type="password" value={txnCode} onChange={e => setTxnCode(e.target.value)}
-            placeholder="Transaction Code" style={inp} required />
+            placeholder="Enter your 6-digit transaction code" maxLength={6}
+            style={{ ...inp, background: txnCode ? '#fff' : '#ffffcc' }} required />
         </TabRow>
+        <div style={{ marginBottom: 12, padding: '8px 12px', background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 4, fontSize: 12, color: '#795548' }}>
+          Enter <strong>your own</strong> transaction code to authorize this update.
+        </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
           <SubmitBtn loading={saving} />
         </div>

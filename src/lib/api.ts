@@ -47,9 +47,10 @@ api.interceptors.response.use(
         refreshPromise = fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
           .then(async res => {
             if (!res.ok) {
-              // Refresh failed — redirect to login
+              // Refresh failed (session expired or force-logged out) — redirect to login
               if (typeof window !== 'undefined') {
-                window.location.href = '/login'
+                const isAdmin = window.location.pathname.startsWith('/admin')
+                window.location.href = isAdmin ? '/admin/login' : '/login'
               }
               throw new Error('Session expired')
             }
@@ -180,16 +181,27 @@ export const casinoApi = {
 }
 
 export const adminApi = {
+  // ── User management (admin prefix — PLAYER role blocked at gateway) ─────────
   users: (params?: object) =>
-    apiGet<import('@/types').UserAccount[]>('/api/users/hierarchy', params),
+    apiGet<import('@/types').UserAccount[]>('/api/admin/users', params),
   getUser: (id: string) =>
-    apiGet<import('@/types').UserAccount>(`/api/users/${id}`),
+    apiGet<import('@/types').UserAccount>(`/api/admin/users/${id}`),
   createUser: (data: object) =>
-    apiPost<import('@/types').UserAccount>('/api/users', data),
-  updateUser: (id: string, data: object) =>
-    apiPut<import('@/types').UserAccount>(`/api/users/${id}`, data),
-  setStatus: (id: string, status: string) =>
-    apiPut(`/api/users/${id}/status`, { status }),
+    apiPost<import('@/types').UserAccount>('/api/admin/users', data),
+  /** Update a downline user's profile/limits. Requires caller's own 6-digit transaction code. */
+  updateUser: (id: string, data: object, transactionCode: string) =>
+    apiPut<import('@/types').UserAccount>(`/api/admin/users/${id}`, { ...data, transactionCode }),
+  /**
+   * Set user-lock and bet-lock for a downline user.
+   * userLock=true suspends the account and immediately invalidates their session.
+   * betLock=true blocks bet placement while keeping the account active.
+   * Requires caller's own 6-digit transaction code as a second factor.
+   */
+  setLocks: (id: string, userLock: boolean, betLock: boolean, transactionCode: string) =>
+    apiPut(`/api/admin/users/${id}/locks`, { userLock, betLock, transactionCode }),
+  /** Reset a downline user's password. Requires caller's own 6-digit transaction code. */
+  resetClientPassword: (targetUserId: string, newPassword: string, transactionCode: string) =>
+    apiPut(`/api/admin/users/${targetUserId}/password`, { newPassword, transactionCode }),
   /** Credit deposit into a downline user's wallet (admin-level transfer). */
   creditDeposit: (userId: string, amount: number, remark?: string) =>
     apiPost(`/api/wallet/admin/credit`, { userId, amount, remark }),
@@ -217,7 +229,7 @@ export const adminApi = {
   // ── Reports ──────────────────────────────────────────────────────────────
   /** Resolve username → userId for statement lookup */
   resolveUser: (username: string) =>
-    apiGet<import('@/types').UserAccount[]>('/api/users/hierarchy').then(
+    apiGet<import('@/types').UserAccount[]>('/api/admin/users').then(
       users => users.find(u => u.username.toLowerCase() === username.toLowerCase())
     ),
   reportStatement: (params?: object) =>
